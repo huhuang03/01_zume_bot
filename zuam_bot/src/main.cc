@@ -13,7 +13,6 @@ const std::string WINDOW_NAME = "Zuma Deluxe 1.0";
 
 const std::string MAIN_MODULE_NAME = "popcapgame1.exe";
 
-
 DWORD eb::getBaseAddr(DWORD processId, const std::string &moduleName) {
     if (processId <= 0) {
         return 0;
@@ -132,6 +131,27 @@ static uint32_t setScore(HWND hwnd) {
     return score;
 }
 
+static void printThread(HWND hwnd) {
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid <= 0) {
+        std::cout << "why pid <= 0" << std::endl;
+        return;
+    }
+
+    // how to print the thread?
+    auto tlSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
+    THREADENTRY32 te{0};
+    te.dwSize = sizeof te;
+    if (Thread32First(tlSnap, &te)) {
+        do {
+            printf("Thread ID: 0x%04lx\n", te.th32ThreadID);
+        } while (Thread32Next(tlSnap, &te));
+    } else {
+        std::cout << "why Thread32First false?" << std::endl;
+    }
+}
+
 int main() {
     HWND hwnd = nullptr;
     while (true) {
@@ -169,7 +189,7 @@ int main() {
             Sleep(1000);
         }
         else if (GetAsyncKeyState(VK_NUMPAD9)) {
-            getScore(hwnd);
+            printThread(hwnd);
             Sleep(1000);
         }
         else if (GetAsyncKeyState(VK_NUMPAD3)) {
