@@ -1,0 +1,3 @@
+F:/ytb_casual_gamer/01_zuma_bot/zuma_bot/build32/CMakeFiles/ALL_BUILD.dir
+F:/ytb_casual_gamer/01_zuma_bot/zuma_bot/build32/CMakeFiles/ZERO_CHECK.dir
+F:/ytb_casual_gamer/01_zuma_bot/zuma_bot/build32/src/CMakeFiles/zuma_bot.dir

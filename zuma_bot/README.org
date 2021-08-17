@@ -1,0 +1,2 @@
+* read the thread stack base
+Need compare as 32 bit to work.

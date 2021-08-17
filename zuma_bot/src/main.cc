@@ -8,6 +8,8 @@
 #include <easybot/util_process.h>
 #include <iterator>
 #include <TlHelp32.h>
+#include <Psapi.h>
+#include "./ntinfo.h"
 
 const std::string WINDOW_NAME = "Zuma Deluxe 1.0";
 
@@ -67,7 +69,7 @@ static DWORD getTheScoreAddr(HWND hwnd) {
     int offsets[] = {0x19BD40, 0x6c, 0x34, 0xC8, 0x8, 0xF0, 0x10, 0xE8};
     uint32_t rst = 0;
     DWORD addr = baseAddr;
-    size_t readed = 0;
+    SIZE_T readed = 0;
 
     for (int i = 0; i < std::size(offsets); i++) {
         auto offset = offsets[i];
@@ -98,7 +100,7 @@ static uint32_t getScore(HWND hwnd) {
     }
 
     uint32_t rst = 0;
-    size_t readed = 0;
+    SIZE_T readed = 0;
     auto addr = getTheScoreAddr(hwnd);
     printf("addr: %0lX\n", addr);
     // ok, now we have the right addr?
@@ -124,11 +126,72 @@ static uint32_t setScore(HWND hwnd) {
     }
 
     uint32_t score = 999999;
-    size_t write = 0;
+    SIZE_T write = 0;
     auto addr = getTheScoreAddr(hwnd);
     // ok, now we have the right addr?
     WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(addr), &score, sizeof score, &write);
     return score;
+}
+
+DWORD getThreadStartAddress(HANDLE hProcess, HANDLE hThread) {
+    /* rewritten from https://github.com/cheat-engine/cheat-engine/blob/master/Cheat%20Engine/CEFuncProc.pas#L3080 */
+    DWORD used = 0, ret = 0;
+    DWORD stacktop = 0, result = 0;
+
+    MODULEINFO mi;
+
+    GetModuleInformation(hProcess, GetModuleHandle("kernel32.dll"), &mi, sizeof(mi));
+    stacktop = (DWORD)GetThreadStackTopAddress_x86(hProcess, hThread);
+
+    /* The stub below has the same result as calling GetThreadStackTopAddress_x86()
+    change line 54 in ntinfo.cpp to return tbi.TebBaseAddress
+    Then use this stub
+    */
+    //LPCVOID tebBaseAddress = GetThreadStackTopAddress_x86(processHandle, hThread);
+    //if (tebBaseAddress)
+    //	ReadProcessMemory(processHandle, (LPCVOID)((DWORD)tebBaseAddress + 4), &stacktop, 4, NULL);
+
+    /* rewritten from 32 bit stub (line3141)
+    Result: fail -- can't get GetThreadContext()
+    */
+    //CONTEXT context;
+    //LDT_ENTRY ldtentry;
+    //GetModuleInformation(processHandle, LoadLibrary("kernel32.dll"), &mi, sizeof(mi));
+    //
+    //if (GetThreadContext(processHandle, &context)) {
+    //
+    //	if (GetThreadSelectorEntry(hThread, context.SegFs, &ldtentry)) {
+    //		ReadProcessMemory(processHandle,
+    //			(LPCVOID)( (DWORD*)(ldtentry.BaseLow + ldtentry.HighWord.Bytes.BaseMid << ldtentry.HighWord.Bytes.BaseHi << 24) + 4),
+    //			&stacktop,
+    //			4,
+    //			NULL);
+    //	}
+    //}
+
+    CloseHandle(hThread);
+
+    if (stacktop) {
+        //find the stack entry pointing to the function that calls "ExitXXXXXThread"
+        //Fun thing to note: It's the first entry that points to a address in kernel32
+
+        auto* buf32 = new DWORD[4096];
+
+        // you are so strange?
+        if (ReadProcessMemory(hProcess, (LPCVOID)(stacktop - 4096), buf32, 4096, NULL)) {
+            for (int i = 4096 / 4 - 1; i >= 0; --i) {
+                if (buf32[i] >= (DWORD)mi.lpBaseOfDll && buf32[i] <= (DWORD)mi.lpBaseOfDll + mi.SizeOfImage) {
+                    result = stacktop - 4096 + i * 4;
+                    break;
+                }
+
+            }
+        }
+
+        delete[] buf32;
+    }
+
+    return result;
 }
 
 static void printThread(HWND hwnd) {
@@ -139,13 +202,28 @@ static void printThread(HWND hwnd) {
         return;
     }
 
-    // how to print the thread?
-    auto tlSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
+    auto hProcess = OpenProcess(PROCESS_ALL_ACCESS, false, pid);
+
+    auto tlSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     THREADENTRY32 te{0};
     te.dwSize = sizeof te;
+    int num = 0;
     if (Thread32First(tlSnap, &te)) {
         do {
-            printf("Thread ID: 0x%04lx\n", te.th32ThreadID);
+            if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID)) {
+                if (te.th32OwnerProcessID == pid) {
+                    printf("Thread ID: 0x%04lx, no: %d\n", te.th32ThreadID, num++);
+
+                    // Ok, get the thread base addr.
+                    auto threadHandler = OpenThread(THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, te.th32ThreadID);
+                    if (threadHandler == nullptr) {
+                        printf("why threadHandler is null?\n");
+                        continue;
+                    }
+                    auto baseAddr= getThreadStartAddress(hProcess, threadHandler);
+                    printf("BaseAddr: 0x%lx\n", baseAddr);
+                }
+            }
         } while (Thread32Next(tlSnap, &te));
     } else {
         std::cout << "why Thread32First false?" << std::endl;

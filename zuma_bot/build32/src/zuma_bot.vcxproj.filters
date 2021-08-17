@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\main.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\ntinfo.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\util\util_color.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\util\util_keyboard.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\ntinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\util\util_color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\util\util_keyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="F:\ytb_casual_gamer\01_zuma_bot\zuma_bot\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{97310066-067C-3F77-914C-C5C739516958}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0EE67AED-E70A-3F83-AEC6-3C5DE9325F97}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
